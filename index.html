@@ -1,0 +1,122 @@
+
+---
+
+## 📄 **3. assets/logo-placeholder.png**
+
+- Add a blank placeholder PNG (any 200x200 px) and reference it in `index.html` and README.
+
+---
+
+## 📄 **4. index.html**
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SimpleCoin v2 Checkout</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- SimpleCart.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/simplecart/3.0.5/simplecart.min.js"></script>
+  <style>
+    body { padding-top: 50px; }
+    .cart-summary { margin-top: 20px; }
+    .logo { max-width: 150px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <img src="assets/logo-placeholder.png" alt="Logo" class="logo mb-4">
+
+  <h1>SimpleCoin Checkout</h1>
+
+  <div class="row">
+    <div class="col-md-8">
+      <div class="simpleCart_shelfItem mb-3">
+        <h4 class="item_name">Product A</h4>
+        <p>$<span class="item_price">25.00</span></p>
+        <input type="number" class="item_quantity form-control" value="1">
+        <button class="simpleCart_add btn btn-primary mt-2">Add to Cart</button>
+      </div>
+      <div class="simpleCart_shelfItem mb-3">
+        <h4 class="item_name">Product B</h4>
+        <p>$<span class="item_price">15.00</span></p>
+        <input type="number" class="item_quantity form-control" value="1">
+        <button class="simpleCart_add btn btn-primary mt-2">Add to Cart</button>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <h3>Cart</h3>
+      <div class="simpleCart_items"></div>
+      <div class="cart-summary">
+        <p>Subtotal: $<span class="simpleCart_total"></span></p>
+        <p>Shipping: $<input type="number" id="shippingFee" value="10" style="width:60px;"></p>
+        <p>Total: $<span id="cartTotal"></span></p>
+        <textarea id="orderNotes" class="form-control mb-2" placeholder="Order notes..."></textarea>
+        <img src="https://via.placeholder.com/200x200.png?text=QR+Payment" alt="QR Code" class="img-fluid mb-2">
+        <a href="https://stripe.com/pay/static-link" target="_blank" class="btn btn-success w-100">Pay Now</a>
+        <button id="submitOrder" class="btn btn-primary w-100 mt-2">Submit Order</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Initialize SimpleCart
+  simpleCart({
+    checkout: { type: "none" }
+  });
+
+  function updateTotal() {
+    const subtotal = parseFloat(simpleCart.grandTotal()) || 0;
+    const shipping = parseFloat(document.getElementById('shippingFee').value) || 0;
+    document.getElementById('cartTotal').innerText = (subtotal + shipping).toFixed(2);
+
+    let notes = '';
+    simpleCart.each(function(item){
+      notes += `${item.get('name')} x${item.get('quantity')} - $${item.get('price')}\n`;
+    });
+    document.getElementById('orderNotes').value = notes;
+  }
+
+  // Update total whenever cart changes
+  simpleCart.bind('update', updateTotal);
+  document.getElementById('shippingFee').addEventListener('input', updateTotal);
+
+  document.getElementById('submitOrder').addEventListener('click', function() {
+    const payload = {
+      items: [],
+      subtotal: parseFloat(simpleCart.grandTotal()) || 0,
+      shipping: parseFloat(document.getElementById('shippingFee').value) || 0,
+      total: parseFloat(document.getElementById('cartTotal').innerText) || 0,
+      orderNotes: document.getElementById('orderNotes').value,
+      customerName: prompt("Enter your name:"),
+      customerEmail: prompt("Enter your email:"),
+      shippingAddress: prompt("Enter your shipping address:")
+    };
+
+    simpleCart.each(function(item){
+      payload.items.push({
+        name: item.get('name'),
+        price: item.get('price'),
+        quantity: item.get('quantity')
+      });
+    });
+
+    fetch('YOUR_APPS_SCRIPT_WEB_APP_URL', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    }).then(res => res.text())
+      .then(res => alert('Order submitted!'))
+      .catch(err => alert('Error submitting order'));
+  });
+
+  // Initial update
+  updateTotal();
+</script>
+
+</body>
+</html>
